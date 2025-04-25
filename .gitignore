@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+.swc/
 
 # production
 /build
@@ -32,6 +33,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +41,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local data
+/data/
+/public/processed_data.json
+
+/public/data/
+borehole.zip
+boreholes.zip
+borehole/
