@@ -23,7 +23,7 @@ export default function Home() {
 
   const loadResolutionData = useCallback(async (resolution: number) => {
     try {
-      const res = await fetch(`/data/h3_scale_${resolution}.json`);
+      const res = await fetch(`/boreholedensitymap/data/h3_scale_${resolution}.json`);
       if (!res.ok) {
         throw new Error('Failed to load data');
       }
