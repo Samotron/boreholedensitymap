@@ -95,7 +95,7 @@ if __name__ == "__main__":
     db.sql("UPDATE boreholes SET  lon = ST_X(geom),  lat = ST_Y(geom);")
     
     print("🔷 Processing H3 scales...")
-    scales = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    scales = [3, 4, 5, 6, 7]
     for i in scales:
         print(f"  ⚡ Processing H3 scale {i}...")
         db.sql(
