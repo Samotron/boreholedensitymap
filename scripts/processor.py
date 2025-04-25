@@ -50,8 +50,10 @@ def main() -> None:
     extract_path = "borehole"
     shapefile_path = os.path.join(extract_path, "borehole.shp")
 
-    # Create extraction directory if it doesn't exist
+    # Create necessary directories
     Path(extract_path).mkdir(exist_ok=True)
+    Path("public/data").mkdir(parents=True, exist_ok=True)
+    print("📁 Created necessary directories")
 
     # Check if we need to download and extract new data
     if is_file_older_than_two_weeks(shapefile_path):
