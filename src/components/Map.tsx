@@ -5,7 +5,7 @@ import { GeoJsonLayer, BitmapLayer } from '@deck.gl/layers';
 import { TileLayer } from '@deck.gl/geo-layers';
 import { FeatureCollection, Geometry } from 'geojson';
 import { cellToBoundary } from 'h3-js';
-import parse from 'wellknown';
+import * as wellknown from 'wellknown';
 
 const INITIAL_VIEW_STATE: MapViewState = {
   longitude: -2.5,
@@ -74,7 +74,7 @@ const getHexDataForResolution = async (resolution: number): Promise<FeatureColle
     if (item.wkt) {
       // Use WKT geometry if available
       try {
-        geometry = parse(item.wkt);
+        geometry = wellknown.parse(item.wkt);
       } catch (e) {
         console.error('Failed to parse WKT:', e);
         return null;
@@ -277,13 +277,13 @@ export default function MapComponent() {
     visible: showBasemap,
     renderSubLayers: props => {
       const {
-        bbox: { west, south, east, north }
+        bbox: { left, bottom, right, top }
       } = props.tile;
 
       return new BitmapLayer(props, {
         data: null,
         image: props.data,
-        bounds: [west, south, east, north]
+        bounds: [left, bottom, right, top]
       });
     }
   }), [showBasemap]);
