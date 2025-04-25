@@ -59,7 +59,7 @@ const getHexDataForResolution = async (resolution: number): Promise<FeatureColle
   }
 
   // Load data
-  const filePath = `/data/h3_scale_${resolution}.json`;
+  const filePath = `/boreholedensitymap/data/h3_scale_${resolution}.json`;
   console.log(`Loading resolution ${resolution}`);
   const response = await fetch(filePath);
   if (!response.ok) {
