@@ -93,6 +93,7 @@ if __name__ == "__main__":
         "ALTER TABLE boreholes ADD COLUMN lon DOUBLE; ALTER TABLE boreholes ADD COLUMN lat DOUBLE; "
     )
     db.sql("UPDATE boreholes SET  lon = ST_X(geom),  lat = ST_Y(geom);")
+    print(db.sql("SELECT * FROM BOREHOLES LIMIT 5"))
     
     print("🔷 Processing H3 scales...")
     scales = [3, 4, 5, 6, 7]
@@ -102,13 +103,13 @@ if __name__ == "__main__":
             f"ALTER TABLE boreholes ADD COLUMN h3_scale_{i} BIGINT; UPDATE boreholes SET h3_scale_{i} = h3_latlng_to_cell(lat, lon, {i});"
         )
     print("📋 Boreholes table summary:")
-    print(db.sql("SELECT * FROM BOREHOLES"))
+    #print(db.sql("COPY (SELECT * FROM BOREHOLES) TO './public/data/boreholes.parquet'"))
 
     print("📊 Generating H3 scale aggregations...")
     for j in scales:
         print(f"  💾 Creating and exporting H3 scale {j}...")
         db.sql(
-            f"CREATE TABLE boreholes_h3_scale_{j} AS SELECT h3_scale_{j} as cell, h3_cell_to_boundary_wkt(h3_scale_{j}) as wkt, COUNT(h3_scale_{j}) as count FROM boreholes GROUP BY h3_scale_{j}"
+            f"CREATE TABLE boreholes_h3_scale_{j} AS SELECT h3_scale_{j} as cell, h3_cell_to_boundary_wkt(h3_scale_{j}) as wkt, COUNT(h3_scale_{j}) as count, COUNT(CASE WHEN AGS_LOG_UR IS NOT NULL THEN 1 END) as AGS_count FROM boreholes GROUP BY h3_scale_{j}"
         )
         db.sql(f"COPY boreholes_h3_scale_{j} TO './public/data/h3_scale_{j}.json' (ARRAY)")
         print(f"  📊 Summary for scale {j}:")
@@ -116,3 +117,4 @@ if __name__ == "__main__":
         db.sql(f"DROP TABLE BOREHOLES_H3_SCALE_{j}")
 
     print("✨ Processing completed successfully! ✨")
+    print(db.sql("DESCRIBE BOREHOLES").show(max_rows=100))

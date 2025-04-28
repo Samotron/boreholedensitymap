@@ -2,11 +2,19 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
+import Sidebar from '../components/Sidebar';
 
 // Import Map component dynamically to avoid SSR issues with DeckGL
 const Map = dynamic(() => import('../components/Map'), {
   ssr: false,
-  loading: () => <div className="w-full h-screen flex items-center justify-center">Loading map component...</div>
+  loading: () => (
+    <div className="w-full h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-2"></div>
+        <p className="text-gray-700">Loading map component...</p>
+      </div>
+    </div>
+  )
 });
 
 interface ProcessedData {
@@ -20,6 +28,7 @@ export default function Home() {
   const [data, setData] = useState<Array<{ hexId: string; count: number }>>([]);
   const [resolution, setResolution] = useState(3);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedGeoJSON, setUploadedGeoJSON] = useState<any>(null);
 
   const loadResolutionData = useCallback(async (resolution: number) => {
     try {
@@ -46,22 +55,34 @@ export default function Home() {
     loadResolutionData(newResolution);
   };
 
+  const handleGeoJSONUploaded = (geojsonData: any) => {
+    setUploadedGeoJSON(geojsonData);
+  };
+
   useEffect(() => {
     loadResolutionData(resolution);
-  }, []);
+  }, [loadResolutionData, resolution]);
 
   if (error) {
     return (
-      <div className="w-full h-screen flex items-center justify-center flex-col gap-4">
-        <p className="text-red-500">Error: {error}</p>
-        <p className="text-sm">Make sure to run the preprocessing script first</p>
+      <div className="w-full h-screen flex items-center justify-center flex-col gap-4 bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-md text-center">
+          <svg className="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p className="text-red-500 text-lg font-medium mb-2">Error: {error}</p>
+          <p className="text-gray-600">Make sure to run the preprocessing script first</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-screen">
-      <Map />
+    <div className="w-full h-screen overflow-hidden relative">
+      <Sidebar onGeoJSONUploaded={handleGeoJSONUploaded} />
+      <div className="ml-80 w-[calc(100%-20rem)] h-screen">
+        <Map uploadedGeoJSON={uploadedGeoJSON} />
+      </div>
     </div>
   );
 }

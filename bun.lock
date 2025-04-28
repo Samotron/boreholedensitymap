@@ -11,6 +11,7 @@
         "@duckdb/node-api": "^1.2.2-alpha.18",
         "@geoarrow/deck.gl-layers": "^0.3.0",
         "@types/papaparse": "^5.3.15",
+        "@types/wellknown": "^0.5.8",
         "apache-arrow": "^19.0.1",
         "deck.gl": "^9.1.10",
         "h3-js": "^4.2.1",
@@ -387,6 +388,8 @@
     "@types/supercluster": ["@types/supercluster@7.1.3", "", { "dependencies": { "@types/geojson": "*" } }, "sha512-Z0pOY34GDFl3Q6hUFYf3HkTwKEE02e7QgtJppBt+beEAxnyOpJua+voGFvxINBHa06GwLFFym7gRPY2SiKIfIA=="],
 
     "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw=="],
+
+    "@types/wellknown": ["@types/wellknown@0.5.8", "", {}, "sha512-/tXv+IfentaS3F0VplScdl+pwP7biW4RBnOxCTtoWlpNiulFBQWqA8rA7r/knavu9SELsFcNVtdGo6YNIElMdw=="],
 
     "@vaadin/a11y-base": ["@vaadin/a11y-base@24.6.8", "", { "dependencies": { "@open-wc/dedupe-mixin": "^1.3.0", "@polymer/polymer": "^3.0.0", "@vaadin/component-base": "~24.6.8", "lit": "^3.0.0" } }, "sha512-0nBmXllsns+ZHG7ZDp8jcEf71LBjnTQ4zxYFY0K2ZOK9oSm3vYvBfDIFto08bpNvE/FtuhNTVchxMAEUUGYWTg=="],
 
