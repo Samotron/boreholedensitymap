@@ -30,11 +30,17 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [uploadedGeoJSON, setUploadedGeoJSON] = useState<any>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Check if screen is mobile on initial load
+  // Check if screen is mobile on initial load and listen for resize
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsSidebarCollapsed(window.innerWidth < 768);
+      const isMobileDevice = window.innerWidth < 768;
+      setIsMobile(isMobileDevice);
+      // Auto-collapse sidebar on mobile
+      if (isMobileDevice) {
+        setIsSidebarCollapsed(true);
+      }
     };
 
     // Set initial value
@@ -78,6 +84,11 @@ export default function Home() {
 
   const handleGeoJSONUploaded = (geojsonData: any) => {
     setUploadedGeoJSON(geojsonData);
+    
+    // If we're on mobile and upload data, collapse the sidebar to show the map
+    if (isMobile) {
+      setIsSidebarCollapsed(true);
+    }
   };
 
   useEffect(() => {
@@ -98,24 +109,29 @@ export default function Home() {
     );
   }
 
+  // Calculate sidebar width based on collapsed state and mobile status
+  const sidebarWidth = isSidebarCollapsed ? (isMobile ? 10 : 12) : (isMobile ? 0 : 320);
+
   return (
     <div className="w-full h-screen overflow-hidden relative">
       <Sidebar 
         onGeoJSONUploaded={handleGeoJSONUploaded} 
         isCollapsed={isSidebarCollapsed} 
-        onToggleCollapse={toggleSidebar} 
+        onToggleCollapse={toggleSidebar}
+        isMobile={isMobile}
       />
       
       <div 
         className={`h-screen transition-all duration-300 ease-in-out ${
           isSidebarCollapsed 
-            ? 'ml-12 w-[calc(100%-3rem)]' 
-            : 'md:ml-80 sm:ml-0 md:w-[calc(100%-20rem)] sm:w-full'
+            ? `ml-${isMobile ? '10' : '12'} w-[calc(100%-${isMobile ? '2.5' : '3'}rem)]` 
+            : isMobile ? 'ml-0 w-full' : 'md:ml-80 sm:ml-0 md:w-[calc(100%-20rem)] sm:w-full'
         }`}
       >
         <Map 
           uploadedGeoJSON={uploadedGeoJSON} 
-          sidebarWidth={isSidebarCollapsed ? 48 : 320}
+          sidebarWidth={sidebarWidth}
+          isMobile={isMobile}
         />
       </div>
     </div>

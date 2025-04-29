@@ -5,9 +5,15 @@ interface SidebarProps {
   onGeoJSONUploaded: (data: any) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  isMobile?: boolean;
 }
 
-export default function Sidebar({ onGeoJSONUploaded, isCollapsed = false, onToggleCollapse }: SidebarProps) {
+export default function Sidebar({ 
+  onGeoJSONUploaded, 
+  isCollapsed = false, 
+  onToggleCollapse,
+  isMobile = false
+}: SidebarProps) {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   const handleFileUploaded = (geojsonData: any) => {
@@ -19,32 +25,106 @@ export default function Sidebar({ onGeoJSONUploaded, isCollapsed = false, onTogg
     setUploadedFileName(name);
   };
 
-  // If sidebar is collapsed, show a minimal version
+  // If sidebar is collapsed, show a minimal version with a more mobile-friendly UI
   if (isCollapsed) {
     return (
-      <div className="fixed left-0 top-0 w-12 h-screen bg-white shadow-lg z-10 flex flex-col items-center py-4">
+      <div className={`fixed left-0 top-0 h-screen bg-white shadow-lg z-20 flex flex-col items-center py-4 transition-all duration-300 ${isMobile ? 'w-10' : 'w-12'}`}>
         <button 
           onClick={onToggleCollapse}
-          className="p-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors w-10 h-10 flex items-center justify-center"
+          className="p-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors w-8 h-8 flex items-center justify-center"
           aria-label="Expand sidebar"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
         </button>
         
-        {/* Increased distance between button and text, made text smaller and spaced out */}
-        <div className="mt-10 mb-10">
-          <p className="rotate-90 whitespace-nowrap text-xs font-medium text-gray-700 tracking-wide">
-            Borehole Map
-          </p>
-        </div>
+        {/* Only show the label on non-mobile devices */}
+        {!isMobile && (
+          <div className="mt-10 mb-10">
+            <p className="rotate-90 whitespace-nowrap text-xs font-medium text-gray-700 tracking-wide">
+              Borehole Map
+            </p>
+          </div>
+        )}
       </div>
     );
   }
 
+  // On mobile, when expanded, make it full-screen with a semi-transparent background
+  if (isMobile) {
+    return (
+      <>
+        {/* Overlay for mobile expanded sidebar */}
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-10" onClick={onToggleCollapse}></div>
+        
+        <div className="fixed left-0 top-0 w-[85vw] max-w-xs h-screen bg-white shadow-lg z-20 p-4 overflow-y-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-lg font-bold text-gray-800 pr-2">UK Borehole Density Map</h1>
+            <button 
+              onClick={onToggleCollapse}
+              className="p-1 rounded-md hover:bg-gray-100 text-gray-700 transition-colors min-w-8 h-8 flex items-center justify-center flex-shrink-0"
+              aria-label="Collapse sidebar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Rest of the sidebar content - more condensed for mobile */}
+          <section className="mb-4">
+            <FileUpload onFileUploaded={handleFileUploaded} />
+            {uploadedFileName && (
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-xs text-blue-700 font-medium">
+                  Successfully loaded: {uploadedFileName}
+                </p>
+              </div>
+            )}
+          </section>
+          
+          <section className="mb-4">
+            <h2 className="text-base font-semibold mb-1 text-gray-800">About</h2>
+            <p className="text-xs text-gray-700 mb-2">
+              This application visualizes the density of boreholes across the United Kingdom using hexagonal binning.
+            </p>
+          </section>
+          
+          <section className="mb-4">
+            <h2 className="text-base font-semibold mb-1 text-gray-800">How It Works</h2>
+            <p className="text-xs text-gray-700 mb-2">
+              The map uses hierarchical hexagonal binning (H3) to aggregate borehole locations.
+            </p>
+            <div className="bg-gray-50 p-2 rounded-md border border-gray-200">
+              <div className="h-3 w-full mb-1 rounded-sm bg-gradient-to-r from-[#41B6C4] via-[#C7E9B4] to-[#D7191C]"></div>
+              <div className="flex justify-between text-[10px] text-gray-600">
+                <span>Low</span>
+                <span>Medium</span>
+                <span>High</span>
+              </div>
+            </div>
+          </section>
+          
+          <section className="mb-4">
+            <h2 className="text-base font-semibold mb-1 text-gray-800">Data Source</h2>
+            <p className="text-xs text-gray-700">
+              British Geological Survey (BGS) Borehole Index
+            </p>
+          </section>
+          
+          <footer className="text-[10px] border-t pt-3 border-gray-200 text-gray-500">
+            <p className="mb-1">Contains BGS materials © UKRI [2025]</p>
+            <p>Basemap © OpenStreetMap contributors</p>
+          </footer>
+        </div>
+      </>
+    );
+  }
+
+  // Original desktop sidebar
   return (
-    <div className="fixed left-0 top-0 w-80 md:w-72 sm:w-full sm:max-w-full h-screen bg-white shadow-lg z-10 p-6 overflow-y-auto">
+    <div className="fixed left-0 top-0 w-80 md:w-72 h-screen bg-white shadow-lg z-10 p-6 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold text-gray-800 pr-2">UK Borehole Density Map</h1>
         <button 
