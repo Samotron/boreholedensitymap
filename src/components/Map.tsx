@@ -8,19 +8,13 @@ import { cellToBoundary } from 'h3-js';
 import * as wellknown from 'wellknown';
 
 // Calculate offset for the initial view to account for sidebar
-const SIDEBAR_WIDTH_PIXELS = 320;
-const calculateLongitudeOffset = (latitude: number, zoom: number): number => {
+const calculateLongitudeOffset = (latitude: number, zoom: number, sidebarWidthPixels: number): number => {
   const pixelsPerLongitudeDegree = Math.cos(latitude * Math.PI / 180) * 111000 * Math.pow(2, zoom) / 256;
-  return (SIDEBAR_WIDTH_PIXELS / 2) / pixelsPerLongitudeDegree;
+  return (sidebarWidthPixels / 2) / pixelsPerLongitudeDegree;
 };
 
-const INITIAL_VIEW_STATE: MapViewState = {
-  longitude: -2.5 + calculateLongitudeOffset(54.0, 5),
-  latitude: 54.0,
-  zoom: 5,
-  pitch: 0,
-  bearing: 0
-};
+// Default sidebar width is now a parameter
+const DEFAULT_SIDEBAR_WIDTH = 320;
 
 const COUNT_COLOR_SCALE = [
   [0, [65, 182, 196, 180]],
@@ -146,26 +140,11 @@ const Tooltip = ({
 };
 
 const Legend = () => (
-  <div style={{
-    position: 'absolute',
-    bottom: '32px',
-    right: '32px',
-    background: 'white',
-    padding: '16px',
-    borderRadius: '6px',
-    boxShadow: '0 3px 6px rgba(0,0,0,0.2)',
-    zIndex: 1,
-    minWidth: '240px',
-  }}>
-    <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 600 }}>Borehole Density</h3>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div style={{ 
-        width: '100%', 
-        height: '24px',
-        background: 'linear-gradient(to right, rgb(65,182,196), rgb(127,205,187), rgb(199,233,180), rgb(252,174,145), rgb(215,25,28))',
-        borderRadius: '4px'
-      }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '12px', color: '#555' }}>
+  <div className="fixed bottom-8 right-8 bg-white p-4 rounded-md shadow-md z-10 max-w-xs w-full sm:max-w-[240px]">
+    <h3 className="m-0 mb-3 text-sm font-semibold">Borehole Density</h3>
+    <div className="flex flex-col gap-2">
+      <div className="w-full h-6 rounded bg-gradient-to-r from-[#41B6C4] via-[#C7E9B4] to-[#D7191C]" />
+      <div className="flex justify-between w-full text-xs text-gray-600">
         <span>Low</span>
         <span>Medium</span>
         <span>High</span>
@@ -195,34 +174,21 @@ const LayerControl = ({
   onMetricChange: (metric: string) => void;
   hasUploadedData: boolean;
 }) => (
-  <div style={{
-    position: 'absolute',
-    top: '20px',
-    right: '20px',
-    background: 'white',
-    padding: '12px',
-    borderRadius: '4px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-    zIndex: 1,
-  }}>
-    <div style={{ marginBottom: '12px' }}>
-      <label style={{ fontSize: '14px', marginBottom: '8px', display: 'block' }}>Color By:</label>
+  <div className="fixed top-5 right-5 bg-white p-3 rounded-md shadow-md z-10 max-w-xs">
+    <div className="mb-3">
+      <label className="text-sm mb-2 block">Color By:</label>
       <select 
         value={selectedMetric} 
         onChange={(e) => onMetricChange(e.target.value)}
-        style={{
-          width: '100%',
-          padding: '4px',
-          borderRadius: '4px'
-        }}
+        className="w-full p-1 text-sm rounded border"
       >
         <option value="count">Total Boreholes</option>
         <option value="AGS_count">AGS Boreholes</option>
         <option value="AGS_Percentage">AGS Percentage</option>
       </select>
     </div>
-    <div style={{ marginBottom: '8px' }}>
-      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+    <div className="mb-2">
+      <label className="flex items-center gap-2 cursor-pointer text-sm">
         <input
           type="checkbox"
           checked={showBasemap}
@@ -231,8 +197,8 @@ const LayerControl = ({
         Basemap
       </label>
     </div>
-    <div style={{ marginBottom: '8px' }}>
-      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+    <div className="mb-2">
+      <label className="flex items-center gap-2 cursor-pointer text-sm">
         <input
           type="checkbox"
           checked={showHexagons}
@@ -243,7 +209,7 @@ const LayerControl = ({
     </div>
     {hasUploadedData && (
       <div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+        <label className="flex items-center gap-2 cursor-pointer text-sm">
           <input
             type="checkbox"
             checked={showUploadedGeoJSON}
@@ -256,20 +222,125 @@ const LayerControl = ({
   </div>
 );
 
+// Helper function to calculate the scale bar length based on latitude and zoom
+const calculateScaleBarDistance = (latitude: number, zoom: number): { width: number; distance: number; unit: string } => {
+  // Earth's circumference at the equator in meters
+  const earthCircumference = 40075016.686;
+  
+  // Adjust for latitude (the length of a degree of longitude decreases with increasing latitude)
+  const metersPerPixel = (earthCircumference * Math.cos(latitude * Math.PI / 180)) / (256 * Math.pow(2, zoom));
+  
+  // Target scale bar width in pixels (adjust as needed)
+  const targetWidth = 100;
+  
+  // Calculate distance represented by the target width
+  let distance = targetWidth * metersPerPixel;
+  let unit = 'm';
+  
+  // Round to a nice number and adjust unit if needed
+  if (distance >= 1000) {
+    distance = distance / 1000;
+    unit = 'km';
+  }
+  
+  // Round to a nice number (1, 2, 5, 10, 20, 50, 100, etc.)
+  const magnitudes = [1, 2, 5];
+  const scale = Math.pow(10, Math.floor(Math.log10(distance)));
+  let bestDistance = magnitudes[0] * scale;
+  
+  for (const mag of magnitudes) {
+    if (Math.abs(distance - mag * scale) < Math.abs(distance - bestDistance)) {
+      bestDistance = mag * scale;
+    }
+  }
+  
+  // Calculate the width in pixels for this nice distance
+  const width = bestDistance * (unit === 'km' ? 1000 : 1) / metersPerPixel;
+  
+  return {
+    width,
+    distance: bestDistance,
+    unit
+  };
+};
+
+// ScaleBar component
+const ScaleBar = ({ 
+  latitude, 
+  zoom, 
+  resolution,
+  sidebarWidth
+}: { 
+  latitude: number; 
+  zoom: number; 
+  resolution: number;
+  sidebarWidth: number 
+}) => {
+  // Calculate scale bar properties
+  const scale = calculateScaleBarDistance(latitude, zoom);
+  
+  // Calculate the left position to avoid sidebar overlap
+  const leftPosition = sidebarWidth + 20; // 20px padding from sidebar edge
+  
+  return (
+    <div className="fixed bottom-8 bg-white p-3 rounded-md shadow-md z-10 max-w-xs transition-all duration-300 ease-in-out"
+         style={{ left: `${leftPosition}px` }}>
+      <div className="flex flex-col gap-2">
+        {/* Scale bar visualization */}
+        <div className="flex flex-col items-center">
+          <div className="flex items-center">
+            <div className="h-2 bg-gray-800" style={{ width: `${scale.width}px` }}></div>
+          </div>
+          <div className="text-xs text-gray-700 mt-1">
+            {scale.distance} {scale.unit}
+          </div>
+        </div>
+        
+        {/* Info section */}
+        <div className="flex justify-between text-xs text-gray-600 pt-2 border-t border-gray-200 mt-1">
+            <div>H3 Resolution: {resolution}</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface MapComponentProps {
   uploadedGeoJSON?: any;
+  sidebarWidth?: number;
 }
 
-export default function MapComponent({ uploadedGeoJSON }: MapComponentProps) {
-  const [currentResolution, setCurrentResolution] = useState(getResolutionForZoom(INITIAL_VIEW_STATE.zoom));
+export default function MapComponent({ uploadedGeoJSON, sidebarWidth = DEFAULT_SIDEBAR_WIDTH }: MapComponentProps) {
+  // Create initial view state with the appropriate offset based on sidebar width
+  const initialViewState = useMemo(() => {
+    const baseLatitude = 54.0;
+    const baseZoom = 5;
+    return {
+      longitude: -2.5 + calculateLongitudeOffset(baseLatitude, baseZoom, sidebarWidth),
+      latitude: baseLatitude,
+      zoom: baseZoom,
+      pitch: 0,
+      bearing: 0
+    };
+  }, [sidebarWidth]);
+  
+  const [currentResolution, setCurrentResolution] = useState(getResolutionForZoom(initialViewState.zoom));
   const [hexData, setHexData] = useState<FeatureCollection<Geometry> | null>(null);
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+  const [viewState, setViewState] = useState(initialViewState);
   const [maxCount, setMaxCount] = useState(100);
   const [showBasemap, setShowBasemap] = useState(true);
   const [showHexagons, setShowHexagons] = useState(true);
   const [showUploadedGeoJSON, setShowUploadedGeoJSON] = useState(true);
   const [hoverInfo, setHoverInfo] = useState<{object: any; x: number; y: number} | null>(null);
   const [selectedMetric, setSelectedMetric] = useState('count');
+
+  // Update the view when the sidebar width changes
+  useEffect(() => {
+    setViewState(prev => ({
+      ...prev,
+      longitude: -2.5 + calculateLongitudeOffset(prev.latitude, prev.zoom, sidebarWidth)
+    }));
+  }, [sidebarWidth]);
 
   useEffect(() => {
     const fetchHexData = async () => {
@@ -422,26 +493,24 @@ export default function MapComponent({ uploadedGeoJSON }: MapComponentProps) {
     }
     
     return (
-      <div style={{
-        position: 'absolute',
-        zIndex: 1,
-        pointerEvents: 'none',
-        left: x,
-        top: y,
-        backgroundColor: 'white',
-        padding: '8px',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-      }}>
+      <div className="absolute pointer-events-none z-10 bg-white p-2 rounded shadow-md text-xs"
+           style={{ left: x, top: y }}>
         {tooltipContent}
       </div>
     );
   };
 
+  // Calculate effective sidebar width based on collapsed state
+  const effectiveSidebarWidth = useMemo(() => {
+    // If the sidebar width is small (48px for collapsed state), use that value
+    // Otherwise use the full width
+    return sidebarWidth < 50 ? sidebarWidth : sidebarWidth;
+  }, [sidebarWidth]);
+
   return (
     <>
       <DeckGL
-        initialViewState={INITIAL_VIEW_STATE}
+        initialViewState={initialViewState}
         viewState={viewState}
         onViewStateChange={onViewStateChange}
         controller
@@ -459,6 +528,12 @@ export default function MapComponent({ uploadedGeoJSON }: MapComponentProps) {
         hasUploadedData={!!uploadedGeoJSON}
       />
       <Legend />
+      <ScaleBar 
+        latitude={viewState.latitude} 
+        zoom={viewState.zoom} 
+        resolution={currentResolution}
+        sidebarWidth={effectiveSidebarWidth}
+      />
       {renderTooltip()}
     </>
   );

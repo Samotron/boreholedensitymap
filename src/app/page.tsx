@@ -29,6 +29,27 @@ export default function Home() {
   const [resolution, setResolution] = useState(3);
   const [error, setError] = useState<string | null>(null);
   const [uploadedGeoJSON, setUploadedGeoJSON] = useState<any>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Check if screen is mobile on initial load
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsSidebarCollapsed(window.innerWidth < 768);
+    };
+
+    // Set initial value
+    checkIfMobile();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(prev => !prev);
+  }, []);
 
   const loadResolutionData = useCallback(async (resolution: number) => {
     try {
@@ -79,9 +100,23 @@ export default function Home() {
 
   return (
     <div className="w-full h-screen overflow-hidden relative">
-      <Sidebar onGeoJSONUploaded={handleGeoJSONUploaded} />
-      <div className="ml-80 w-[calc(100%-20rem)] h-screen">
-        <Map uploadedGeoJSON={uploadedGeoJSON} />
+      <Sidebar 
+        onGeoJSONUploaded={handleGeoJSONUploaded} 
+        isCollapsed={isSidebarCollapsed} 
+        onToggleCollapse={toggleSidebar} 
+      />
+      
+      <div 
+        className={`h-screen transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed 
+            ? 'ml-12 w-[calc(100%-3rem)]' 
+            : 'md:ml-80 sm:ml-0 md:w-[calc(100%-20rem)] sm:w-full'
+        }`}
+      >
+        <Map 
+          uploadedGeoJSON={uploadedGeoJSON} 
+          sidebarWidth={isSidebarCollapsed ? 48 : 320}
+        />
       </div>
     </div>
   );

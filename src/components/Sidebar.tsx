@@ -3,9 +3,11 @@ import FileUpload from './FileUpload';
 
 interface SidebarProps {
   onGeoJSONUploaded: (data: any) => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function Sidebar({ onGeoJSONUploaded }: SidebarProps) {
+export default function Sidebar({ onGeoJSONUploaded, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   const handleFileUploaded = (geojsonData: any) => {
@@ -17,9 +19,44 @@ export default function Sidebar({ onGeoJSONUploaded }: SidebarProps) {
     setUploadedFileName(name);
   };
 
+  // If sidebar is collapsed, show a minimal version
+  if (isCollapsed) {
+    return (
+      <div className="fixed left-0 top-0 w-12 h-screen bg-white shadow-lg z-10 flex flex-col items-center py-4">
+        <button 
+          onClick={onToggleCollapse}
+          className="p-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors w-10 h-10 flex items-center justify-center"
+          aria-label="Expand sidebar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+        
+        {/* Increased distance between button and text, made text smaller and spaced out */}
+        <div className="mt-10 mb-10">
+          <p className="rotate-90 whitespace-nowrap text-xs font-medium text-gray-700 tracking-wide">
+            Borehole Map
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="absolute left-0 top-0 w-80 h-screen bg-white shadow-lg z-10 p-6 overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">UK Borehole Density Map</h1>
+    <div className="fixed left-0 top-0 w-80 md:w-72 sm:w-full sm:max-w-full h-screen bg-white shadow-lg z-10 p-6 overflow-y-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-xl font-bold text-gray-800 pr-2">UK Borehole Density Map</h1>
+        <button 
+          onClick={onToggleCollapse}
+          className="p-2 rounded-md hover:bg-gray-100 text-gray-700 transition-colors min-w-10 h-10 flex items-center justify-center flex-shrink-0"
+          aria-label="Collapse sidebar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
       
       <section className="mb-6">
         <FileUpload onFileUploaded={handleFileUploaded} />
@@ -35,7 +72,16 @@ export default function Sidebar({ onGeoJSONUploaded }: SidebarProps) {
       <section className="mb-6">
         <h2 className="text-lg font-semibold mb-2 text-gray-800">About</h2>
         <p className="text-sm text-gray-700 mb-3">
-          This application visualizes the density of boreholes across the United Kingdom using hexagonal binning. 
+          This application visualizes the density of boreholes available in the{' '}
+          <a 
+            href="https://www.bgs.ac.uk/datasets/boreholes-index/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            BGS Single Onshore Borehole Index
+          </a>{' '}
+          across the United Kingdom using hexagonal binning. 
           The visualization helps identify areas with high concentrations of geological sampling and research activity.
         </p>
       </section>
